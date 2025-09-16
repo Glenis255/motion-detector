@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motion Detector</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2em;
+      background-color: #f0f8ff;
+      color: #333;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 0.2em;
+    }
+    #status {
+      font-size: 1.2em;
+      margin-top: 1em;
+    }
+    #stepCount {
+      font-size: 3em;
+      margin-top: 0.5em;
+      color: #007acc;
+    }
+    #startButton {
+      margin-top: 2em;
+      padding: 1em 2em;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 8px;
+      background-color: #007acc;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Motion Detector</h1>
+  <p id="status">Tap "Start" to enable motion detection</p>
+  <p>Steps approximated:</p>
+  <p id="stepCount">0</p>
+  <button id="startButton">Start</button>
+
+  <script>
+    let stepCount = 0;
+    let lastMagnitude = 0;
+    let threshold = 12; // Sensitivity threshold for step approx
+
+    function handleMotion(event) {
+      let x = event.accelerationIncludingGravity.x;
+      let y = event.accelerationIncludingGravity.y;
+      let z = event.accelerationIncludingGravity.z;
+
+      let magnitude = Math.sqrt(x * x + y * y + z * z);
+
+      if (lastMagnitude < threshold && magnitude >= threshold) {
+        stepCount++;
+        document.getElementById('stepCount').textContent = stepCount;
+        document.getElementById('status').textContent = 'You are moving!';
+      } else if (magnitude < threshold) {
+        document.getElementById('status').textContent = 'Waiting for motion...';
+      }
+
+      lastMagnitude = magnitude;
+    }
+
+    function initMotion() {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        // iOS 13+ requires permission
+        DeviceMotionEvent.requestPermission().then(response => {
+          if (response === 'granted') {
+            window.addEventListener('devicemotion', handleMotion);
+            document.getElementById('status').textContent = 'Motion detection started';
+            document.getElementById('startButton').style.display = 'none';
+          } else {
+            document.getElementById('status').textContent = 'Permission denied';
+          }
+        }).catch(err => {
+          document.getElementById('status').textContent = 'Error: ' + err;
+        });
+      } else {
+        // Android / non-iOS browsers
+        window.addEventListener('devicemotion', handleMotion);
+        document.getElementById('status').textContent = 'Motion detection started';
+        document.getElementById('startButton').style.display = 'none';
+      }
+    }
+
+    document.getElementById('startButton').addEventListener('click', initMotion);
+  </script>
+</body>
+</html>
